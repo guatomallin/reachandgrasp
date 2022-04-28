@@ -31,7 +31,7 @@ class FilterandThresholds():
     def bodypart_selector(self, data, bodypart, likelihoodSelect):
         # https://stackoverflow.com/questions/18470323/selecting-columns-from-pandas-multiindex
         # https://stackoverflow.com/questions/22233488/pandas-drop-a-level-from-a-multi-level-column-index
-        bodypartData = data.loc[:, (['bodyparts', bodypart, 'Animal Infor'])]
+        bodypartData = data.loc[:, ['bodyparts', bodypart]]
         bodypartData.columns = bodypartData.columns.droplevel()
         scale = 2.9
         #convert datatypes to int and float
@@ -147,9 +147,11 @@ class FilterandThresholds():
     #This function takes the output of bodypart selector to further clean the signal.
     #This function separates the reach into extension and retraction and cleans around the edges.
 
-    def splitter(self, signal, velocity_peaks, whichPlane):
+    def splitter(self, signal, whichPlane):
 
         # First split at reach by whichPlane max. In coords plane
+
+        #Get the min index
         minReachInd = np.argmin(signal[whichPlane])
 
         # Reset index
@@ -160,37 +162,37 @@ class FilterandThresholds():
 
         # Here find the start of the reach based on velocity spikes.
         # This isolates the peak closest to the reach max.
-        velocityPeakArray = np.asarray(velocity_peaks)
-        new_velocityPeakArray = []
+        # velocityPeakArray = np.asarray(velocity_peaks)
+        # new_velocityPeakArray = []
 
-        for peak in velocityPeakArray:
-            if peak < minReachInd:
-                new_velocityPeakArray.append(peak)
-        new_velocityPeakArray = np.asarray(new_velocityPeakArray)
-        print(new_velocityPeakArray)
-        #bool_newVel = bool(new_velocityPeakArray[0])
-        if new_velocityPeakArray.size > 0:
-            idx = (np.abs(new_velocityPeakArray - minReachInd)).argmin()
-            nearPeakToReachIndex = new_velocityPeakArray[idx]
-            print('peak found, applied function')
-            # Now we do the spliting to cleanSignal. Our index is in real index, but we need to swtich it to coord index.
-            # coordIndex = cleanSignal.index[cleanSignal['level_0'] == nearPeakToReachIndex]
-            # coordIndex = coordIndex[0]
-            boolNeartoPeak = nearPeakToReachIndex - 0
-            if boolNeartoPeak > 2:
-                doubleCleanedSignal = cleanSignal[nearPeakToReachIndex - 2:minReachInd]
-
-            else:
-                doubleCleanedSignal = cleanSignal
-                print('signal not cut')
+        # for peak in velocityPeakArray:
+        #     if peak < minReachInd:
+        #         new_velocityPeakArray.append(peak)
+        # new_velocityPeakArray = np.asarray(new_velocityPeakArray)
+        # print(new_velocityPeakArray)
+        # #bool_newVel = bool(new_velocityPeakArray[0])
+        # if new_velocityPeakArray.size > 0:
+        #     idx = (np.abs(new_velocityPeakArray - minReachInd)).argmin()
+        #     nearPeakToReachIndex = new_velocityPeakArray[idx]
+        #     print('peak found, applied function')
+        #     # Now we do the spliting to cleanSignal. Our index is in real index, but we need to swtich it to coord index.
+        #     # coordIndex = cleanSignal.index[cleanSignal['level_0'] == nearPeakToReachIndex]
+        #     # coordIndex = coordIndex[0]
+        #     boolNeartoPeak = nearPeakToReachIndex - 0
+        #     if boolNeartoPeak > 2:
+        #         doubleCleanedSignal = cleanSignal[nearPeakToReachIndex - 2:minReachInd]
+        #
+        #     else:
+        #         doubleCleanedSignal = cleanSignal
+        #         print('signal not cut')
             # doubleCleanedSignal['Time_Aligend'] = np.arange(0, (0.0033 * len(doubleCleanedSignal.Time) - 1), 0.0033)
 
 
-        else:
-            print('no peak found, applied a different function')
-            doubleCleanedSignal = cleanSignal
+        # else:
+        #     print('no peak found, applied a different function')
+        #     doubleCleanedSignal = cleanSignal
 
-        return cleanSignal, doubleCleanedSignal, minReachInd
+        return cleanSignal, minReachInd
 
     #NEEDS TO BE REFACTOR OR ADD CONDITIONAL TO SEARCH DLC OR BORIS DATA
     def rexsearch(self, file, csv):
