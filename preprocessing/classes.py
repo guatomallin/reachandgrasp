@@ -195,54 +195,158 @@ class FilterandThresholds():
         return cleanSignal, minReachInd
 
     #NEEDS TO BE REFACTOR OR ADD CONDITIONAL TO SEARCH DLC OR BORIS DATA
-    def rexsearch(self, file, csv):
+    def rexsearch(self, file, csv, scorer_bool, scorer,  fps_bool, fps, durpercent_bool):
 
-        csvs_animalNum = []
 
-        #Search for animal number from te file name and put it in a new column
-        csvs_animalNum = list([int(n) for n in re.findall(r'\d+', file) if len(n) == 5] * len(csv.index))
+        if scorer_bool is True:
+            csv[scorer, 'Animal Infor','ID'] = np.nan
+            csv[scorer, 'Animal Infor','Condition'] = np.nan
+            csv[scorer, 'Animal Infor','Reach Number'] = np.nan
+            csv[scorer, 'Animal Infor','Limb'] = np.nan
+            csv[scorer, 'Animal Infor','performance'] = np.nan
+            csv[scorer, 'Animal Infor', 'percent duration'] = np.nan
+            csv[scorer, 'Animal Infor', 'MinMaxNorm Scale'] = np.nan
 
-        #We import the file name and the multi-index csv to add new columns.
-        csv['Animal Infor', 'Reach Number'] = [re.findall(r'_\d{1,2}_', str(file)).pop(0).lstrip('_').rstrip('_')] * len(csv.index)
+            if fps_bool is True:
+                time_saver = []
+                for f in range(len(csv.iloc[0:, 0])):
+                    s = (int(f)/fps)
+                    time_saver.append(s)
+                csv[scorer, 'Time Scale', 'Time'] = time_saver
 
-        #Search through the file name to animal conditon.
-        animalCond_blindBool = re.search(r'_blind_', str(file))
-        animalCond_contBool = re.search(r'_control_', str(file))
+            if durpercent_bool is True:
+                durpercent = []
+                for index, value in csv[scorer, 'Time Scale', 'Time'].items():
+                    pdur = (value/csv[scorer, 'Time Scale', 'Time'].iloc[-1])*100
+                    durpercent.append(round(pdur.astype(float), 0))
+                #print(durpercent)
+                csv[scorer, 'Animal Infor', 'percent duration'] = durpercent
 
-        #... limb used
-        animalCond_rightBool = re.search(r'_right_', str(file))
-        animalCond_leftBool = re.search(r'_left_', str(file))
+            #Normalize time scale
 
-        #... whether the reach was successful or failure
-        animalCond_succBool = re.search(r'_success_', str(file))
-        animalCond_failBool = re.search(r'_fail_', str(file))
+            #Train
+            # scaler = MinMaxScaler(feature_range=(0, 100))
+            # #reshape
+            # valtonorm = csv[scorer, 'Time Scale', 'Time'].reshape((len(csv[scorer, 'Time Scale', 'Time']), 1))
+            # scaler = scaler.fit(csv[scorer, 'Time Scale', 'Time'])
+            # #Normalize
+            # normalized_time = scaler.transform(csv[scorer, 'Time Scale', 'Time'])
+            # #Insert
+            # csv[scorer, 'Animal Infor', 'MinMaxNorm Scale'] = normalized_time
 
-        #Now put it all together
-        # Specify condition
-        if animalCond_blindBool:
-            csv['Animal Infor', 'Condition'] = list(['blind'] * len(csv.index))
+            csvs_animalNum = []
 
-        elif animalCond_contBool:
-            csv['Animal Infor', 'Condition'] = list(['control'] * len(csv.index))
+            #Search for animal number from te file name and put it in a new column
+            csvs_animalNum = list([int(n) for n in re.findall(r'\d+', file) if len(n) == 5] * len(csv.index))
 
-        # Specify limb used
-        if animalCond_rightBool:
-            csv['Animal Infor', 'Limb'] = list(['right'] * len(csv.index))
+            #We import the file name and the multi-index csv to add new columns.
+            csv[scorer,'Animal Infor', 'Reach Number'] = [re.findall(r'_\d{1,2}_', str(file)).pop(0).lstrip('_').rstrip('_')] * len(csv.index)
 
-        elif animalCond_leftBool:
-            csv['Animal Infor', 'Limb'] = list(['left'] * len(csv.index))
+            #Search through the file name to animal conditon.
+            animalCond_blindBool = re.search(r'_blind_', str(file))
+            animalCond_contBool = re.search(r'_control_', str(file))
 
-        # Specify whether the reach was successful or not.
-        if animalCond_succBool:
-            csv['Animal Infor', 'performance'] = list(['success'] * len(csv.index))
+            #... limb used
+            animalCond_rightBool = re.search(r'_right_', str(file))
+            animalCond_leftBool = re.search(r'_left_', str(file))
 
-        elif animalCond_failBool:
-            csv['Animal Infor', 'performance'] = list(['fail'] * len(csv.index))
+            #... whether the reach was successful or failure
+            animalCond_succBool = re.search(r'_success_', str(file))
+            animalCond_failBool = re.search(r'_fail_', str(file))
 
-        #Add animal number to each individual file
-        csv['Animal Infor','ID'] = csvs_animalNum
+            #Now put it all together
+            # Specify condition
+            if animalCond_blindBool:
+                csv[scorer, 'Animal Infor', 'Condition'] = list(['blind'] * len(csv.index))
 
-        #return the csv and add it to the rest of the giant dataframe in a loop outside of this class file.
+            elif animalCond_contBool:
+                csv[scorer, 'Animal Infor', 'Condition'] = list(['control'] * len(csv.index))
+
+            # Specify limb used
+            if animalCond_rightBool:
+                csv[scorer,'Animal Infor', 'Limb'] = list(['right'] * len(csv.index))
+
+            elif animalCond_leftBool:
+                csv[scorer,'Animal Infor', 'Limb'] = list(['left'] * len(csv.index))
+
+            # Specify whether the reach was successful or not.
+            if animalCond_succBool:
+                csv[scorer,'Animal Infor', 'performance'] = list(['success'] * len(csv.index))
+
+            elif animalCond_failBool:
+                csv[scorer,'Animal Infor', 'performance'] = list(['fail'] * len(csv.index))
+
+            #Add animal number to each individual file
+            csv[scorer,'Animal Infor','ID'] = csvs_animalNum
+
+        else:
+            csv['Animal Infor', 'ID'] = np.nan
+            csv['Animal Infor', 'Condition'] = np.nan
+            csv['Animal Infor', 'Reach Number'] = np.nan
+            csv['Animal Infor', 'Limb'] = np.nan
+            csv['Animal Infor', 'performance'] = np.nan
+
+
+            if fps_bool is True:
+                time_saver = []
+                for f in range(len(csv.iloc[0:, 0])):
+                    s = int(f) / fps
+                    time_saver.append(s)
+                csv['Time Scale', 'Time'] = time_saver
+
+            if durpercent_bool is True:
+                durpercent = []
+                for l in range(len(csv.iloc[0:, 0])):
+                    pdur = int(f)/time_saver[-1]
+                    durpercent.append(pdur)
+                csv['Animal Infor', 'percent duration'] = durpercent
+
+            csvs_animalNum = []
+
+            # Search for animal number from te file name and put it in a new column
+            csvs_animalNum = list([int(n) for n in re.findall(r'\d+', file) if len(n) == 5] * len(csv.index))
+
+            # We import the file name and the multi-index csv to add new columns.
+            csv[ 'Animal Infor', 'Reach Number'] = [re.findall(r'_\d{1,2}_', str(file)).pop(0).lstrip(
+                '_').rstrip('_')] * len(csv.index)
+
+            # Search through the file name to animal conditon.
+            animalCond_blindBool = re.search(r'_blind_', str(file))
+            animalCond_contBool = re.search(r'_control_', str(file))
+
+            # ... limb used
+            animalCond_rightBool = re.search(r'_right_', str(file))
+            animalCond_leftBool = re.search(r'_left_', str(file))
+
+            # ... whether the reach was successful or failure
+            animalCond_succBool = re.search(r'_success_', str(file))
+            animalCond_failBool = re.search(r'_fail_', str(file))
+
+            # Now put it all together
+            # Specify condition
+            if animalCond_blindBool:
+                csv['Animal Infor', 'Condition'] = list(['blind'] * len(csv.index))
+
+            elif animalCond_contBool:
+                csv[ 'Animal Infor', 'Condition'] = list(['control'] * len(csv.index))
+
+            # Specify limb used
+            if animalCond_rightBool:
+                csv[ 'Animal Infor', 'Limb'] = list(['right'] * len(csv.index))
+
+            elif animalCond_leftBool:
+                csv[ 'Animal Infor', 'Limb'] = list(['left'] * len(csv.index))
+
+            # Specify whether the reach was successful or not.
+            if animalCond_succBool:
+                csv['Animal Infor', 'performance'] = list(['success'] * len(csv.index))
+
+            elif animalCond_failBool:
+                csv['Animal Infor', 'performance'] = list(['fail'] * len(csv.index))
+
+            # Add animal number to each individual file
+            csv['Animal Infor', 'ID'] = csvs_animalNum
+            #return the csv and add it to the rest of the giant dataframe in a loop outside of this class file.
         return csv
 
 
